@@ -1,0 +1,74 @@
+name: Build and Release Angular Library
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  build:
+    name: Build Library
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '19'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build Angular library
+        run: npm run build -- --prod
+
+      - name: Archive build output
+        run: |
+          mkdir dist-package
+          cp -r dist/date-time-picker-moment-adapter/* dist-package/
+          cd dist-package
+          zip -r ../date-time-picker-moment-adapter.zip .
+        shell: bash
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: date-time-picker-moment-adapter
+          path: date-time-picker-moment-adapter.zip
+
+  release:
+    name: Create GitHub Release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Download build artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: date-time-picker-moment-adapter
+
+      - name: Create GitHub Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: false
+          prerelease: false
+
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./date-time-picker-moment-adapter.zip
+          asset_name: date-time-picker-moment-adapter.zip
+          asset_content_type: application/zip
