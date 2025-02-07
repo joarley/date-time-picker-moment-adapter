@@ -28,7 +28,7 @@ jobs:
       - name: Archive build output
         run: |
           mkdir dist-package
-          cp -r dist/date-time-picker-moment-adapter/* dist-package/
+          cp -r dist/picker/* dist-package/
           cd dist-package
           zip -r ../date-time-picker-moment-adapter.zip .
         shell: bash
